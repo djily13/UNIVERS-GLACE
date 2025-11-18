@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Glacier - UNIVERS GLACE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .login-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-pink-50 min-h-screen">
+    
+    <!-- Écran de connexion -->
+    <div id="loginScreen" class="fixed inset-0 login-container flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">
+                    <svg width="80" height="80" viewBox="0 0 100 100" class="mx-auto">
+                        <circle cx="50" cy="35" r="15" fill="#FFB6C1"/>
+                        <circle cx="50" cy="50" r="12" fill="#98FB98"/>
+                        <circle cx="50" cy="65" r="10" fill="#87CEEB"/>
+                        <rect x="48" y="75" width="4" height="20" fill="#DEB887"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">UNIVERS GLACE</h1>
+                <p class="text-gray-600">Connexion vendeur</p>
+            </div>
+            
+            <form onsubmit="seConnecter(event)" class="space-y-6">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">Code vendeur</label>
+                    <input type="text" id="codeConnexion" class="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:border-blue-500 focus:outline-none transition-colors" placeholder="Entrez votre code" required>
+                </div>
+                
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all font-bold text-lg">
+                    Se connecter
+                </button>
+            </form>
+            
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div class="text-center">
+                    <div class="text-2xl mb-2">🔐</div>
+                    <p class="text-sm text-gray-600 font-medium">Connexion sécurisée</p>
+                    <p class="text-xs text-gray-500 mt-1">Saisissez votre code personnel fourni par l'administration</p>
+                </div>
+            </div>
+            
+            <div id="loginError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm hidden">
+                Code vendeur incorrect. Veuillez réessayer.
+            </div>
+        </div>
+    </div>
+
+    <!-- Application principale (cachée au début) -->
+    <div id="mainApp" class="hidden">
+        <div class="container mx-auto px-4 py-6">
+            <!-- Header -->
+            <header class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-4xl">
+                            <svg width="50" height="50" viewBox="0 0 100 100">
+                                <circle cx="50" cy="35" r="15" fill="#FFB6C1"/>
+                                <circle cx="50" cy="50" r="12" fill="#98FB98"/>
+                                <circle cx="50" cy="65" r="10" fill="#87CEEB"/>
+                                <rect x="48" y="75" width="4" height="20" fill="#DEB887"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800">UNIVERS GLACE</h1>
+                            <p class="text-gray-600">Système de gestion pour glacier</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-blue-600" id="totalRevenue">0 CFA</div>
+                            <div class="text-sm text-gray-500">Chiffre d'affaires du jour</div>
+                            <div id="saveStatus" class="text-xs text-gray-500 mt-1">Sauvegarde automatique active</div>
+                        </div>
+                        <div class="border-l pl-4">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm" id="vendeurAvatar">V</div>
+                                <div>
+                                    <div class="font-bold text-gray-800" id="vendeurNomHeader">Vendeur</div>
+                                    <div class="text-sm text-gray-500" id="vendeurCodeHeader">Code</div>
+                                </div>
+                            </div>
+                            <button onclick="seDeconnecter()" class="text-sm text-red-600 hover:text-red-800 transition-colors">
+                                🚪 Se déconnecter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Statistiques du vendeur connecté -->
+            <div class="bg-white rounded-xl shadow-lg p-4 mb-6" id="vendeurStats">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-2xl">📊</div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">Mes performances aujourd'hui</h3>
+                            <div class="flex space-x-6 mt-1">
+                                <div class="text-sm">
+                                    <span class="text-gray-500">Ventes:</span>
+                                    <span class="font-bold text-blue-600" id="mesVentes">0</span>
+                                </div>
+                                <div class="text-sm">
+                                    <span class="text-gray-500">CA:</span>
+                                    <span class="font-bold text-green-600" id="monCA">0 CFA</span>
+                                </div>
+                                <div class="text-sm">
+                                    <span class="text-gray-500">Commission:</span>
+                                    <span class="font-bold text-purple-600" id="maCommission">0 CFA</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="bg-white rounded-xl shadow-lg p-4 mb-6">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="showSection('vente')" class="nav-btn bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        🛒 Vente
+                    </button>
+                    <button onclick="showSection('stock')" class="nav-btn bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        📦 Stock
+                    </button>
+                    <button onclick="showSection('produits')" class="nav-btn bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors">
+                        🍨 Produits
+                    </button>
+                    <button onclick="showSection('vendeurs')" class="nav-btn bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors" id="vendeursTab">
+                        👥 Vendeurs
+                    </button>
+                    <button onclick="showSection('ventes')" class="nav-btn bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                        📋 Ventes
+                    </button>
+                    <button onclick="showSection('statistiques')" class="nav-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors">
+                        📊 Statistiques
+                    </button>
+                    <button onclick="showSection('database')" class="nav-btn bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors" id="databaseTab">
+                        💾 Base de données
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Section Vente -->
+            <div id="vente" class="section">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Produits disponibles -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">🍦 Produits Disponibles</h2>
+                        <div class="grid grid-cols-2 gap-3" id="produitsVente">
+                            <!-- Les produits seront ajoutés ici dynamiquement -->
+                        </div>
+                    </div>
+
+                    <!-- Panier -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">🛒 Panier</h2>
+                        <div id="panier" class="space-y-2 mb-4 min-h-[200px]">
+                            <p class="text-gray-500 text-center py-8">Panier vide</p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-xl font-bold">Total:</span>
+                                <span class="text-2xl font-bold text-blue-600" id="totalPanier">0 CFA</span>
+                            </div>
+                            <button onclick="finaliserVente()" class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors font-bold">
+                                Finaliser la vente
+                            </button>
+                            <button onclick="viderPanier()" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors mt-2">
+                                Vider le panier
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Stock -->
+            <div id="stock" class="section hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">📦 Gestion du Stock</h2>
+                        <button onclick="showAddStockModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" id="addStockBtn">
+                            + Ajouter Stock
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4">Produit</th>
+                                    <th class="text-left py-3 px-4">Stock Actuel</th>
+                                    <th class="text-left py-3 px-4">Stock Minimum</th>
+                                    <th class="text-left py-3 px-4">Statut</th>
+                                    <th class="text-left py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTable">
+                                <!-- Le stock sera affiché ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Produits -->
+            <div id="produits" class="section hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">🍨 Gestion des Produits</h2>
+                        <button onclick="showAddProductModal()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors" id="addProductBtn">
+                            + Nouveau Produit
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="produitsGrid">
+                        <!-- Les produits seront affichés ici -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Ventes -->
+            <div id="ventes" class="section hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">📋 Historique des Ventes</h2>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-600">Filtrer par vendeur:</label>
+                                <select id="filtreVendeur" onchange="updateVentesTable()" class="border rounded-lg px-3 py-1 text-sm">
+                                    <option value="">Tous les vendeurs</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-600">Date:</label>
+                                <input type="date" id="filtreDate" onchange="updateVentesTable()" class="border rounded-lg px-3 py-1 text-sm">
+                            </div>
+                            <button onclick="exportVentes()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm">
+                                📥 Exporter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Résumé des ventes -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="totalVentesAffichees">0</div>
+                            <div class="text-sm text-gray-600">Ventes affichées</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-600" id="chiffreAffichees">0 CFA</div>
+                            <div class="text-sm text-gray-600">Chiffre d'affaires</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="produitsVendusAffichees">0</div>
+                            <div class="text-sm text-gray-600">Produits vendus</div>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-orange-600" id="panierMoyenAffichees">0 CFA</div>
+                            <div class="text-sm text-gray-600">Panier moyen</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tableau des ventes -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b bg-gray-50">
+                                    <th class="text-left py-3 px-4 font-semibold">ID Vente</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Date & Heure</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Vendeur</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Produits</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Quantité</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Total</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Commission</th>
+                                    <th class="text-left py-3 px-4 font-semibold">Détails</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ventesTableBody">
+                                <!-- Les ventes seront affichées ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Message si aucune vente -->
+                    <div id="noVentesMessage" class="text-center py-8 text-gray-500 hidden">
+                        <div class="text-4xl mb-2">📋</div>
+                        <p>Aucune vente trouvée pour les critères sélectionnés</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Statistiques -->
+            <div id="statistiques" class="section hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl mb-2">💰</div>
+                        <div class="text-2xl font-bold text-green-600" id="statRevenue">0 CFA</div>
+                        <div class="text-gray-600">Revenus du jour</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl mb-2">🛒</div>
+                        <div class="text-2xl font-bold text-blue-600" id="statVentes">0</div>
+                        <div class="text-gray-600">Ventes du jour</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl mb-2">🍦</div>
+                        <div class="text-2xl font-bold text-purple-600" id="statProduits">0</div>
+                        <div class="text-gray-600">Produits vendus</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                        <div class="text-3xl mb-2">⭐</div>
+                        <div class="text-2xl font-bold text-orange-600" id="statMoyenne">0 CFA</div>
+                        <div class="text-gray-600">Panier moyen</div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">📈 Produits les plus vendus</h3>
+                    <div id="topProduits" class="space-y-3">
+                        <p class="text-gray-500 text-center py-4">Aucune vente enregistrée</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Vendeurs (Admin seulement) -->
+            <div id="vendeurs" class="section hidden">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">👥 Gestion des Vendeurs</h2>
+                        <button onclick="showAddVendeurModal()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                            + Nouveau Vendeur
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="vendeursGrid">
+                        <!-- Les vendeurs seront affichés ici -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Base de données (Admin seulement) -->
+            <div id="database" class="section hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Sauvegarde et restauration -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">💾 Sauvegarde et Restauration</h2>
+                        <div class="space-y-4">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span class="text-green-600">✅</span>
+                                    <span class="font-medium text-green-800">Sauvegarde automatique active</span>
+                                </div>
+                                <p class="text-sm text-green-700">Toutes vos données sont automatiquement sauvegardées dans votre navigateur.</p>
+                            </div>
+                            
+                            <button onclick="db.exportData()" class="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                                📥 Télécharger une sauvegarde
+                            </button>
+                            
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(this)">
+                                <button onclick="document.getElementById('importFile').click()" class="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors font-medium">
+                                    📤 Restaurer une sauvegarde
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2">Sélectionnez un fichier .json de sauvegarde</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistiques de la base de données -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">📊 Informations de la base</h2>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-blue-50 rounded-lg p-3 text-center">
+                                    <div class="text-2xl font-bold text-blue-600" id="dbProduits">0</div>
+                                    <div class="text-sm text-gray-600">Produits</div>
+                                </div>
+                                <div class="bg-green-50 rounded-lg p-3 text-center">
+                                    <div class="text-2xl font-bold text-green-600" id="dbVentes">0</div>
+                                    <div class="text-sm text-gray-600">Ventes totales</div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-purple-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-purple-600" id="dbRevenue">0 CFA</div>
+                                <div class="text-sm text-gray-600">Chiffre d'affaires total</div>
+                            </div>
+                            
+                            <div class="text-sm text-gray-500">
+                                <p><strong>Dernière sauvegarde:</strong> <span id="lastSaved">-</span></p>
+                                <p><strong>Taille des données:</strong> <span id="dataSize">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (identiques à la version précédente) -->
+    <!-- Modal Ajout Produit -->
+    <div id="addProductModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold mb-4">Nouveau Produit</h3>
+            <form onsubmit="addProduct(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Nom du produit</label>
+                    <input type="text" id="productName" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Prix (CFA)</label>
+                    <input type="number" step="0.01" id="productPrice" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Emoji</label>
+                    <input type="text" id="productEmoji" class="w-full border rounded-lg px-3 py-2" placeholder="🍦" maxlength="2">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Stock initial</label>
+                    <input type="number" id="productStock" class="w-full border rounded-lg px-3 py-2" value="0" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Stock minimum</label>
+                    <input type="number" id="productMinStock" class="w-full border rounded-lg px-3 py-2" value="5" required>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        Ajouter
+                    </button>
+                    <button type="button" onclick="hideAddProductModal()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Vendeur -->
+    <div id="addVendeurModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold mb-4">Nouveau Vendeur</h3>
+            <form onsubmit="addVendeur(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Nom complet</label>
+                    <input type="text" id="vendeurNom" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Code vendeur</label>
+                    <input type="text" id="vendeurCode" class="w-full border rounded-lg px-3 py-2" placeholder="Ex: V003" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Téléphone</label>
+                    <input type="tel" id="vendeurTel" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Commission (%)</label>
+                    <input type="number" step="0.1" id="vendeurCommission" class="w-full border rounded-lg px-3 py-2" value="10" min="0" max="100">
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        Ajouter
+                    </button>
+                    <button type="button" onclick="hideAddVendeurModal()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ajout Stock -->
+    <div id="addStockModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold mb-4">Ajouter du Stock</h3>
+            <form onsubmit="addStock(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Produit</label>
+                    <select id="stockProduct" class="w-full border rounded-lg px-3 py-2" required>
+                        <option value="">Sélectionner un produit</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Quantité à ajouter</label>
+                    <input type="number" id="stockQuantity" class="w-full border rounded-lg px-3 py-2" min="1" required>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        Ajouter
+                    </button>
+                    <button type="button" onclick="hideAddStockModal()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Modification Vendeur -->
+    <div id="modifyVendeurModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold mb-4">Modifier Vendeur</h3>
+            <form onsubmit="updateVendeur(event)">
+                <input type="hidden" id="modifyVendeurId">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Nom complet</label>
+                    <input type="text" id="modifyVendeurNom" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Code vendeur</label>
+                    <input type="text" id="modifyVendeurCode" class="w-full border rounded-lg px-3 py-2" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Téléphone</label>
+                    <input type="tel" id="modifyVendeurTel" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Commission (%)</label>
+                    <input type="number" step="0.1" id="modifyVendeurCommission" class="w-full border rounded-lg px-3 py-2" min="0" max="100">
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        Sauvegarder
+                    </button>
+                    <button type="button" onclick="hideModifyVendeurModal()" class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Détails de Vente -->
+    <div id="venteDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Détails de la Vente</h3>
+                <button onclick="hideVenteDetailsModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            
+            <div id="venteDetailsContent">
+                <!-- Le contenu sera rempli dynamiquement -->
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="hideVenteDetailsModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour générer les images SVG des produits
+        function getProductImage(produit) {
+            const images = {
+                // Glaces
+                'Glace Vanille': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <circle cx="50" cy="35" r="15" fill="#FFF8DC"/>
+                    <circle cx="50" cy="50" r="12" fill="#F5F5DC"/>
+                    <circle cx="50" cy="65" r="10" fill="#FFFACD"/>
+                    <rect x="48" y="75" width="4" height="20" fill="#DEB887"/>
+                </svg>`,
+                
+                'Glace Chocolat': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <circle cx="50" cy="35" r="15" fill="#8B4513"/>
+                    <circle cx="50" cy="50" r="12" fill="#A0522D"/>
+                    <circle cx="50" cy="65" r="10" fill="#CD853F"/>
+                    <rect x="48" y="75" width="4" height="20" fill="#DEB887"/>
+                </svg>`,
+                
+                'Glace Fraise': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <circle cx="50" cy="35" r="15" fill="#FFB6C1"/>
+                    <circle cx="50" cy="50" r="12" fill="#FF69B4"/>
+                    <circle cx="50" cy="65" r="10" fill="#FF1493"/>
+                    <rect x="48" y="75" width="4" height="20" fill="#DEB887"/>
+                </svg>`,
+                
+                'Sorbet Citron': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <circle cx="50" cy="40" r="18" fill="#FFFF00"/>
+                    <circle cx="50" cy="60" r="15" fill="#FFD700"/>
+                    <rect x="48" y="75" width="4" height="20" fill="#DEB887"/>
+                </svg>`,
+                
+                'Sundae Caramel': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="45" rx="20" ry="25" fill="#FFF8DC"/>
+                    <path d="M35 55 Q50 65 65 55" stroke="#D2691E" stroke-width="3" fill="none"/>
+                    <path d="M35 60 Q50 70 65 60" stroke="#D2691E" stroke-width="3" fill="none"/>
+                    <circle cx="45" cy="35" r="3" fill="#FF0000"/>
+                    <rect x="45" y="70" width="10" height="15" fill="#8B4513"/>
+                </svg>`,
+                
+                // Jus
+                'Jus d\'Orange': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="35" y="25" width="30" height="50" rx="5" fill="#FFA500"/>
+                    <rect x="37" y="27" width="26" height="46" rx="3" fill="#FF8C00"/>
+                    <rect x="45" y="15" width="10" height="15" fill="#32CD32"/>
+                    <circle cx="42" cy="35" r="2" fill="#FFD700"/>
+                    <circle cx="58" cy="45" r="2" fill="#FFD700"/>
+                    <circle cx="48" cy="55" r="2" fill="#FFD700"/>
+                </svg>`,
+                
+                'Jus de Mangue': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="35" y="25" width="30" height="50" rx="5" fill="#FFD700"/>
+                    <rect x="37" y="27" width="26" height="46" rx="3" fill="#FFA500"/>
+                    <rect x="45" y="15" width="10" height="15" fill="#32CD32"/>
+                    <circle cx="44" cy="40" r="2" fill="#FF6347"/>
+                    <circle cx="56" cy="50" r="2" fill="#FF6347"/>
+                    <circle cx="50" cy="60" r="2" fill="#FF6347"/>
+                </svg>`,
+                
+                'Jus de Bissap': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="35" y="25" width="30" height="50" rx="5" fill="#8B008B"/>
+                    <rect x="37" y="27" width="26" height="46" rx="3" fill="#9932CC"/>
+                    <rect x="45" y="15" width="10" height="15" fill="#32CD32"/>
+                    <circle cx="43" cy="38" r="2" fill="#FF69B4"/>
+                    <circle cx="57" cy="48" r="2" fill="#FF69B4"/>
+                    <circle cx="49" cy="58" r="2" fill="#FF69B4"/>
+                </svg>`,
+                
+                'Jus de Gingembre': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="35" y="25" width="30" height="50" rx="5" fill="#DAA520"/>
+                    <rect x="37" y="27" width="26" height="46" rx="3" fill="#B8860B"/>
+                    <rect x="45" y="15" width="10" height="15" fill="#32CD32"/>
+                    <circle cx="45" cy="40" r="2" fill="#F4A460"/>
+                    <circle cx="55" cy="50" r="2" fill="#F4A460"/>
+                    <circle cx="48" cy="60" r="2" fill="#F4A460"/>
+                </svg>`,
+                
+                // Salades de fruits
+                'Salade de Fruits Mixte': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="55" rx="25" ry="20" fill="#F0F8FF"/>
+                    <circle cx="40" cy="45" r="4" fill="#FF0000"/>
+                    <circle cx="55" cy="40" r="4" fill="#FFA500"/>
+                    <circle cx="45" cy="55" r="4" fill="#32CD32"/>
+                    <circle cx="60" cy="50" r="4" fill="#8A2BE2"/>
+                    <circle cx="50" cy="65" r="4" fill="#FFD700"/>
+                    <ellipse cx="50" cy="75" rx="25" ry="5" fill="#E0E0E0"/>
+                </svg>`,
+                
+                'Salade Tropicale': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="55" rx="25" ry="20" fill="#F0F8FF"/>
+                    <path d="M40 45 L45 35 L50 45 L45 55 Z" fill="#FFD700"/>
+                    <circle cx="55" cy="40" r="4" fill="#FF6347"/>
+                    <circle cx="60" cy="55" r="4" fill="#FFA500"/>
+                    <circle cx="45" cy="60" r="4" fill="#32CD32"/>
+                    <path d="M35 50 Q40 45 45 50" stroke="#228B22" stroke-width="2" fill="none"/>
+                    <ellipse cx="50" cy="75" rx="25" ry="5" fill="#E0E0E0"/>
+                </svg>`,
+                
+                'Salade d\'Agrumes': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="55" rx="25" ry="20" fill="#F0F8FF"/>
+                    <circle cx="42" cy="45" r="5" fill="#FFA500"/>
+                    <circle cx="58" cy="45" r="5" fill="#FFFF00"/>
+                    <circle cx="45" cy="60" r="5" fill="#32CD32"/>
+                    <circle cx="55" cy="60" r="5" fill="#FF69B4"/>
+                    <path d="M42 45 L47 40 M53 40 L58 45" stroke="#FFF" stroke-width="1"/>
+                    <ellipse cx="50" cy="75" rx="25" ry="5" fill="#E0E0E0"/>
+                </svg>`,
+                
+                // Milkshakes
+                'Milkshake Vanille': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="40" y="30" width="20" height="45" rx="10" fill="#FFF8DC"/>
+                    <ellipse cx="50" cy="25" rx="12" ry="8" fill="#FFFACD"/>
+                    <rect x="48" y="15" width="4" height="15" fill="#FF0000"/>
+                    <circle cx="50" cy="12" r="3" fill="#FF69B4"/>
+                    <rect x="35" y="75" width="30" height="5" fill="#8B4513"/>
+                </svg>`,
+                
+                'Milkshake Chocolat': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="40" y="30" width="20" height="45" rx="10" fill="#D2691E"/>
+                    <ellipse cx="50" cy="25" rx="12" ry="8" fill="#8B4513"/>
+                    <rect x="48" y="15" width="4" height="15" fill="#FF0000"/>
+                    <circle cx="50" cy="12" r="3" fill="#FF69B4"/>
+                    <rect x="35" y="75" width="30" height="5" fill="#8B4513"/>
+                </svg>`,
+                
+                'Milkshake Fraise': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="40" y="30" width="20" height="45" rx="10" fill="#FFB6C1"/>
+                    <ellipse cx="50" cy="25" rx="12" ry="8" fill="#FF69B4"/>
+                    <rect x="48" y="15" width="4" height="15" fill="#FF0000"/>
+                    <circle cx="50" cy="12" r="3" fill="#FF1493"/>
+                    <rect x="35" y="75" width="30" height="5" fill="#8B4513"/>
+                </svg>`,
+                
+                'Milkshake Banane': `<svg width="40" height="40" viewBox="0 0 100 100">
+                    <rect x="40" y="30" width="20" height="45" rx="10" fill="#FFFF99"/>
+                    <ellipse cx="50" cy="25" rx="12" ry="8" fill="#FFD700"/>
+                    <rect x="48" y="15" width="4" height="15" fill="#FF0000"/>
+                    <circle cx="50" cy="12" r="3" fill="#FF69B4"/>
+                    <rect x="35" y="75" width="30" height="5" fill="#8B4513"/>
+                </svg>`
+            };
+            
+            return images[produit.nom] || `<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg">${produit.emoji}</div>`;
+        }
+
+        // Système de base de données locale
+        class GlacierDB {
+            constructor() {
+                this.dbName = 'GlacierManager';
+                this.loadData();
+            }
+
+            // Charger les données depuis localStorage
+            loadData() {
+                try {
+                    const savedData = localStorage.getItem(this.dbName);
+                    if (savedData) {
+                        const data = JSON.parse(savedData);
+                        produits = data.produits || this.getDefaultProduits();
+                        ventes = data.ventes ? data.ventes.map(v => ({...v, date: new Date(v.date)})) : [];
+                        vendeurs = data.vendeurs || this.getDefaultVendeurs();
+                        nextProductId = data.nextProductId || 17;
+                        nextVendeurId = data.nextVendeurId || 4;
+                        console.log('✅ Données chargées depuis la base de données locale');
+                    } else {
+                        produits = this.getDefaultProduits();
+                        ventes = [];
+                        vendeurs = this.getDefaultVendeurs();
+                        nextProductId = 17;
+                        nextVendeurId = 4;
+                        this.saveData();
+                        console.log('🆕 Nouvelle base de données créée');
+                    }
+                } catch (error) {
+                    console.error('❌ Erreur lors du chargement:', error);
+                    produits = this.getDefaultProduits();
+                    ventes = [];
+                    vendeurs = this.getDefaultVendeurs();
+                    nextProductId = 17;
+                    nextVendeurId = 4;
+                }
+            }
+
+            // Sauvegarder les données dans localStorage
+            saveData() {
+                try {
+                    const data = {
+                        produits: produits,
+                        ventes: ventes,
+                        vendeurs: vendeurs,
+                        nextProductId: nextProductId,
+                        nextVendeurId: nextVendeurId,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem(this.dbName, JSON.stringify(data));
+                    console.log('💾 Données sauvegardées automatiquement');
+                    this.updateSaveStatus('Sauvegardé automatiquement');
+                } catch (error) {
+                    console.error('❌ Erreur lors de la sauvegarde:', error);
+                    this.updateSaveStatus('Erreur de sauvegarde');
+                }
+            }
+
+            // Exporter les données
+            exportData() {
+                const data = {
+                    produits: produits,
+                    ventes: ventes,
+                    vendeurs: vendeurs,
+                    nextProductId: nextProductId,
+                    nextVendeurId: nextVendeurId,
+                    exportDate: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `glacier-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            // Importer les données
+            importData(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.produits && data.ventes && data.vendeurs) {
+                            produits = data.produits;
+                            ventes = data.ventes.map(v => ({...v, date: new Date(v.date)}));
+                            vendeurs = data.vendeurs;
+                            nextProductId = data.nextProductId || 17;
+                            nextVendeurId = data.nextVendeurId || 4;
+                            this.saveData();
+                            location.reload(); // Recharger pour mettre à jour l'affichage
+                        } else {
+                            alert('❌ Fichier de sauvegarde invalide');
+                        }
+                    } catch (error) {
+                        alert('❌ Erreur lors de l\'importation: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            // Réinitialiser la base de données
+            resetData() {
+                if (confirm('⚠️ Êtes-vous sûr de vouloir effacer toutes les données ? Cette action est irréversible.')) {
+                    localStorage.removeItem(this.dbName);
+                    location.reload();
+                }
+            }
+
+            // Produits par défaut
+            getDefaultProduits() {
+                return [
+                    // Glaces
+                    { id: 1, nom: 'Glace Vanille', prix: 2000, emoji: '🍦', stock: 25, minStock: 5 },
+                    { id: 2, nom: 'Glace Chocolat', prix: 2000, emoji: '🍫', stock: 20, minStock: 5 },
+                    { id: 3, nom: 'Glace Fraise', prix: 2000, emoji: '🍓', stock: 18, minStock: 5 },
+                    { id: 4, nom: 'Sorbet Citron', prix: 1500, emoji: '🍋', stock: 15, minStock: 5 },
+                    { id: 5, nom: 'Sundae Caramel', prix: 3000, emoji: '🍨', stock: 12, minStock: 3 },
+                    
+                    // Jus
+                    { id: 6, nom: 'Jus d\'Orange', prix: 1200, emoji: '🍊', stock: 30, minStock: 8 },
+                    { id: 7, nom: 'Jus de Mangue', prix: 1300, emoji: '🥭', stock: 25, minStock: 8 },
+                    { id: 8, nom: 'Jus de Bissap', prix: 1000, emoji: '🌺', stock: 20, minStock: 6 },
+                    { id: 9, nom: 'Jus de Gingembre', prix: 1100, emoji: '🫚', stock: 18, minStock: 6 },
+                    
+                    // Salades de fruits
+                    { id: 10, nom: 'Salade de Fruits Mixte', prix: 1800, emoji: '🥗', stock: 15, minStock: 5 },
+                    { id: 11, nom: 'Salade Tropicale', prix: 2200, emoji: '🍍', stock: 12, minStock: 4 },
+                    { id: 12, nom: 'Salade d\'Agrumes', prix: 1600, emoji: '🍊', stock: 18, minStock: 5 },
+                    
+                    // Milkshakes
+                    { id: 13, nom: 'Milkshake Vanille', prix: 2500, emoji: '🥤', stock: 20, minStock: 6 },
+                    { id: 14, nom: 'Milkshake Chocolat', prix: 2500, emoji: '🍫', stock: 18, minStock: 6 },
+                    { id: 15, nom: 'Milkshake Fraise', prix: 2500, emoji: '🍓', stock: 16, minStock: 5 },
+                    { id: 16, nom: 'Milkshake Banane', prix: 2400, emoji: '🍌', stock: 14, minStock: 5 }
+                ];
+            }
+
+            // Vendeurs par défaut
+            getDefaultVendeurs() {
+                return [
+                    { id: 1, nom: 'Altiné', code: 'DK01', telephone: '', commission: 0, isAdmin: true, dateCreation: new Date() },
+                    { id: 2, nom: 'Marie Dupont', code: 'V001', telephone: '0123456789', commission: 10, isAdmin: false, dateCreation: new Date() },
+                    { id: 3, nom: 'Jean Martin', code: 'V002', telephone: '0987654321', commission: 12, isAdmin: false, dateCreation: new Date() }
+                ];
+            }
+
+            // Mettre à jour le statut de sauvegarde
+            updateSaveStatus(message) {
+                const statusElement = document.getElementById('saveStatus');
+                if (statusElement) {
+                    statusElement.textContent = message;
+                    statusElement.className = 'text-xs text-green-600';
+                    setTimeout(() => {
+                        statusElement.textContent = 'Sauvegarde automatique active';
+                        statusElement.className = 'text-xs text-gray-500';
+                    }, 2000);
+                }
+            }
+        }
+
+        // Données globales
+        let produits = [];
+        let panier = [];
+        let ventes = [];
+        let vendeurs = [];
+        let vendeurConnecte = null;
+        let nextProductId = 17;
+        let nextVendeurId = 4;
+        let db = new GlacierDB();
+
+
+
+        // Système de connexion
+        function seConnecter(event) {
+            event.preventDefault();
+            
+            const code = document.getElementById('codeConnexion').value.toUpperCase().trim();
+            console.log('Code saisi:', code);
+            console.log('Vendeurs disponibles:', vendeurs.map(v => v.code));
+            
+            const vendeur = vendeurs.find(v => v.code === code);
+            
+            if (vendeur) {
+                vendeurConnecte = vendeur;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                
+                // Mettre à jour l'interface utilisateur
+                updateUserInterface();
+                showSection('vente');
+                updateTotalRevenue();
+                updateVendeurStats();
+                
+                console.log(`✅ Connexion réussie: ${vendeur.nom} (${vendeur.code})`);
+            } else {
+                console.log('❌ Code non trouvé');
+                document.getElementById('loginError').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('loginError').classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        function seDeconnecter() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                vendeurConnecte = null;
+                panier = [];
+                document.getElementById('mainApp').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('codeConnexion').value = '';
+            }
+        }
+
+        function updateUserInterface() {
+            if (!vendeurConnecte) return;
+            
+            // Mettre à jour les informations du vendeur dans le header
+            document.getElementById('vendeurNomHeader').textContent = vendeurConnecte.nom;
+            document.getElementById('vendeurCodeHeader').textContent = vendeurConnecte.code;
+            document.getElementById('vendeurAvatar').textContent = vendeurConnecte.code.charAt(0);
+            
+            // Masquer les onglets admin si ce n'est pas un admin
+            if (!vendeurConnecte.isAdmin) {
+                document.getElementById('vendeursTab').style.display = 'none';
+                document.getElementById('databaseTab').style.display = 'none';
+                document.getElementById('addProductBtn').style.display = 'none';
+                document.getElementById('addStockBtn').style.display = 'none';
+            } else {
+                document.getElementById('vendeursTab').style.display = 'inline-block';
+                document.getElementById('databaseTab').style.display = 'inline-block';
+                document.getElementById('addProductBtn').style.display = 'inline-block';
+                document.getElementById('addStockBtn').style.display = 'inline-block';
+            }
+        }
+
+        function updateVendeurStats() {
+            if (!vendeurConnecte) return;
+            
+            const today = new Date().toDateString();
+            const mesVentesJour = ventes.filter(vente => 
+                vente.vendeurId === vendeurConnecte.id && 
+                vente.date.toDateString() === today
+            );
+            
+            const nbVentes = mesVentesJour.length;
+            const ca = mesVentesJour.reduce((sum, vente) => sum + vente.total, 0);
+            const commission = Math.round((ca * vendeurConnecte.commission) / 100);
+            
+            document.getElementById('mesVentes').textContent = nbVentes;
+            document.getElementById('monCA').textContent = ca + ' CFA';
+            document.getElementById('maCommission').textContent = commission + ' CFA';
+        }
+
+        // Navigation
+        function showSection(sectionName) {
+            // Vérifier les permissions
+            if (!vendeurConnecte.isAdmin && (sectionName === 'vendeurs' || sectionName === 'database')) {
+                alert('❌ Accès refusé. Cette section est réservée aux administrateurs.');
+                return;
+            }
+            
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionName).classList.remove('hidden');
+            document.getElementById(sectionName).classList.add('fade-in');
+            
+            // Mettre à jour les données selon la section
+            if (sectionName === 'vente') {
+                updateProduitsVente();
+            } else if (sectionName === 'stock') {
+                updateStockTable();
+            } else if (sectionName === 'produits') {
+                updateProduitsGrid();
+            } else if (sectionName === 'ventes') {
+                updateVentesTable();
+            } else if (sectionName === 'statistiques') {
+                updateStatistiques();
+            } else if (sectionName === 'vendeurs') {
+                updateVendeursGrid();
+            } else if (sectionName === 'database') {
+                updateDatabaseInfo();
+            }
+        }
+
+        // Gestion des produits pour la vente
+        function updateProduitsVente() {
+            const container = document.getElementById('produitsVente');
+            container.innerHTML = '';
+            
+            produits.forEach(produit => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 rounded-lg p-3 text-center cursor-pointer hover:bg-gray-100 transition-colors';
+                div.onclick = () => ajouterAuPanier(produit.id);
+                
+                const stockStatus = produit.stock === 0 ? 'opacity-50 cursor-not-allowed' : '';
+                div.className += ` ${stockStatus}`;
+                
+                div.innerHTML = `
+                    <div class="mb-2 flex justify-center">${getProductImage(produit)}</div>
+                    <div class="font-semibold text-sm">${produit.nom}</div>
+                    <div class="text-blue-600 font-bold">${produit.prix} CFA</div>
+                    <div class="text-xs text-gray-500">Stock: ${produit.stock}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Gestion du panier
+        function ajouterAuPanier(produitId) {
+            const produit = produits.find(p => p.id === produitId);
+            if (!produit || produit.stock === 0) return;
+            
+            const itemPanier = panier.find(item => item.id === produitId);
+            if (itemPanier) {
+                if (itemPanier.quantite < produit.stock) {
+                    itemPanier.quantite++;
+                }
+            } else {
+                panier.push({ ...produit, quantite: 1 });
+            }
+            
+            updatePanier();
+        }
+
+        function updatePanier() {
+            const container = document.getElementById('panier');
+            const totalElement = document.getElementById('totalPanier');
+            
+            if (panier.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Panier vide</p>';
+                totalElement.textContent = '0 CFA';
+                return;
+            }
+            
+            container.innerHTML = '';
+            let total = 0;
+            
+            panier.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between bg-gray-50 rounded-lg p-3 slide-in';
+                
+                const sousTotal = item.prix * item.quantite;
+                total += sousTotal;
+                
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-6 h-6">${getProductImage(item)}</div>
+                        <span class="font-medium text-sm">${item.nom}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="modifierQuantite(${item.id}, -1)" class="bg-red-500 text-white w-6 h-6 rounded-full text-xs hover:bg-red-600">-</button>
+                        <span class="font-bold">${item.quantite}</span>
+                        <button onclick="modifierQuantite(${item.id}, 1)" class="bg-green-500 text-white w-6 h-6 rounded-full text-xs hover:bg-green-600">+</button>
+                        <span class="font-bold text-blue-600 ml-2">${sousTotal} CFA</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            totalElement.textContent = total + ' CFA';
+        }
+
+        function modifierQuantite(produitId, delta) {
+            const itemPanier = panier.find(item => item.id === produitId);
+            const produit = produits.find(p => p.id === produitId);
+            
+            if (!itemPanier) return;
+            
+            const nouvelleQuantite = itemPanier.quantite + delta;
+            
+            if (nouvelleQuantite <= 0) {
+                panier = panier.filter(item => item.id !== produitId);
+            } else if (nouvelleQuantite <= produit.stock) {
+                itemPanier.quantite = nouvelleQuantite;
+            }
+            
+            updatePanier();
+        }
+
+        function viderPanier() {
+            panier = [];
+            updatePanier();
+        }
+
+        function finaliserVente() {
+            if (panier.length === 0) return;
+            
+            let total = 0;
+            let totalProduits = 0;
+            
+            // Calculer le total et décrémenter le stock
+            panier.forEach(item => {
+                const produit = produits.find(p => p.id === item.id);
+                if (produit) {
+                    produit.stock -= item.quantite;
+                    total += item.prix * item.quantite;
+                    totalProduits += item.quantite;
+                }
+            });
+            
+            // Enregistrer la vente avec le vendeur connecté
+            ventes.push({
+                id: Date.now(),
+                date: new Date(),
+                items: [...panier],
+                total: total,
+                totalProduits: totalProduits,
+                vendeurId: vendeurConnecte.id,
+                vendeurNom: vendeurConnecte.nom,
+                commission: (total * vendeurConnecte.commission) / 100
+            });
+            
+            // Sauvegarder automatiquement
+            db.saveData();
+            
+            // Vider le panier
+            panier = [];
+            updatePanier();
+            updateProduitsVente();
+            updateTotalRevenue();
+            updateVendeurStats();
+            
+            const commission = Math.round((total * vendeurConnecte.commission) / 100);
+            alert(`✅ Vente finalisée !\nTotal: ${total} CFA\nVendeur: ${vendeurConnecte.nom}\nCommission: ${commission} CFA`);
+        }
+
+        function updateTotalRevenue() {
+            const today = new Date().toDateString();
+            const ventesJour = ventes.filter(vente => vente.date.toDateString() === today);
+            const total = ventesJour.reduce((sum, vente) => sum + vente.total, 0);
+            document.getElementById('totalRevenue').textContent = total + ' CFA';
+        }
+
+        // Gestion des produits (Admin seulement)
+        function showAddProductModal() {
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé. Cette action est réservée aux administrateurs.');
+                return;
+            }
+            document.getElementById('addProductModal').classList.remove('hidden');
+            document.getElementById('addProductModal').classList.add('flex');
+        }
+
+        function hideAddProductModal() {
+            document.getElementById('addProductModal').classList.add('hidden');
+            document.getElementById('addProductModal').classList.remove('flex');
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productEmoji').value = '';
+            document.getElementById('productStock').value = '0';
+            document.getElementById('productMinStock').value = '5';
+        }
+
+        function addProduct(event) {
+            event.preventDefault();
+            
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé.');
+                return;
+            }
+            
+            const nom = document.getElementById('productName').value;
+            const prix = parseFloat(document.getElementById('productPrice').value);
+            const emoji = document.getElementById('productEmoji').value || '🍦';
+            const stock = parseInt(document.getElementById('productStock').value);
+            const minStock = parseInt(document.getElementById('productMinStock').value);
+            
+            produits.push({
+                id: nextProductId++,
+                nom: nom,
+                prix: prix,
+                emoji: emoji,
+                stock: stock,
+                minStock: minStock
+            });
+            
+            hideAddProductModal();
+            updateProduitsGrid();
+            updateProduitsVente();
+            db.saveData();
+        }
+
+        function updateProduitsGrid() {
+            const container = document.getElementById('produitsGrid');
+            container.innerHTML = '';
+            
+            produits.forEach(produit => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 rounded-lg p-4';
+                
+                const stockStatus = produit.stock <= produit.minStock ? 'text-red-600' : 'text-green-600';
+                
+                div.innerHTML = `
+                    <div class="text-center mb-3">
+                        <div class="mb-2 flex justify-center">${getProductImage(produit)}</div>
+                        <h3 class="font-bold text-lg">${produit.nom}</h3>
+                        <p class="text-blue-600 font-bold text-xl">${produit.prix} CFA</p>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Stock:</span>
+                            <span class="${stockStatus} font-bold">${produit.stock}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Stock min:</span>
+                            <span>${produit.minStock}</span>
+                        </div>
+                    </div>
+                    ${vendeurConnecte.isAdmin ? `
+                    <button onclick="supprimerProduit(${produit.id})" class="w-full mt-3 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors text-sm">
+                        Supprimer
+                    </button>
+                    ` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function supprimerProduit(produitId) {
+            if (!vendeurConnecte.isAdmin) return;
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
+                produits = produits.filter(p => p.id !== produitId);
+                updateProduitsGrid();
+                updateProduitsVente();
+                db.saveData();
+            }
+        }
+
+        // Gestion du stock (Admin seulement)
+        function showAddStockModal() {
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé. Cette action est réservée aux administrateurs.');
+                return;
+            }
+            
+            const select = document.getElementById('stockProduct');
+            select.innerHTML = '<option value="">Sélectionner un produit</option>';
+            
+            produits.forEach(produit => {
+                const option = document.createElement('option');
+                option.value = produit.id;
+                option.textContent = `${produit.nom}`;
+                select.appendChild(option);
+            });
+            
+            document.getElementById('addStockModal').classList.remove('hidden');
+            document.getElementById('addStockModal').classList.add('flex');
+        }
+
+        function hideAddStockModal() {
+            document.getElementById('addStockModal').classList.add('hidden');
+            document.getElementById('addStockModal').classList.remove('flex');
+            document.getElementById('stockProduct').value = '';
+            document.getElementById('stockQuantity').value = '';
+        }
+
+        function addStock(event) {
+            event.preventDefault();
+            
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé.');
+                return;
+            }
+            
+            const produitId = parseInt(document.getElementById('stockProduct').value);
+            const quantite = parseInt(document.getElementById('stockQuantity').value);
+            
+            const produit = produits.find(p => p.id === produitId);
+            if (produit) {
+                produit.stock += quantite;
+                hideAddStockModal();
+                updateStockTable();
+                updateProduitsVente();
+                updateProduitsGrid();
+                db.saveData();
+            }
+        }
+
+        function updateStockTable() {
+            const tbody = document.getElementById('stockTable');
+            tbody.innerHTML = '';
+            
+            produits.forEach(produit => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-gray-50';
+                
+                let statut = '';
+                let statutClass = '';
+                if (produit.stock === 0) {
+                    statut = 'Rupture';
+                    statutClass = 'bg-red-100 text-red-800';
+                } else if (produit.stock <= produit.minStock) {
+                    statut = 'Stock faible';
+                    statutClass = 'bg-orange-100 text-orange-800';
+                } else {
+                    statut = 'OK';
+                    statutClass = 'bg-green-100 text-green-800';
+                }
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8">${getProductImage(produit)}</div>
+                            <span class="font-medium">${produit.nom}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 font-bold">${produit.stock}</td>
+                    <td class="py-3 px-4">${produit.minStock}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statutClass}">${statut}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        ${vendeurConnecte.isAdmin ? `
+                        <button onclick="ajusterStock(${produit.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors">
+                            Ajuster
+                        </button>
+                        ` : '<span class="text-gray-400">-</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function ajusterStock(produitId) {
+            if (!vendeurConnecte.isAdmin) return;
+            
+            const produit = produits.find(p => p.id === produitId);
+            const nouveauStock = prompt(`Stock actuel de ${produit.nom}: ${produit.stock}\nNouveau stock:`, produit.stock);
+            
+            if (nouveauStock !== null && !isNaN(nouveauStock) && nouveauStock >= 0) {
+                produit.stock = parseInt(nouveauStock);
+                updateStockTable();
+                updateProduitsVente();
+                updateProduitsGrid();
+                db.saveData();
+            }
+        }
+
+        // Gestion des vendeurs (Admin seulement)
+        function showAddVendeurModal() {
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé. Cette action est réservée aux administrateurs.');
+                return;
+            }
+            document.getElementById('addVendeurModal').classList.remove('hidden');
+            document.getElementById('addVendeurModal').classList.add('flex');
+        }
+
+        function hideAddVendeurModal() {
+            document.getElementById('addVendeurModal').classList.add('hidden');
+            document.getElementById('addVendeurModal').classList.remove('flex');
+            document.getElementById('vendeurNom').value = '';
+            document.getElementById('vendeurCode').value = '';
+            document.getElementById('vendeurTel').value = '';
+            document.getElementById('vendeurCommission').value = '10';
+        }
+
+        function addVendeur(event) {
+            event.preventDefault();
+            
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé.');
+                return;
+            }
+            
+            const nom = document.getElementById('vendeurNom').value;
+            const code = document.getElementById('vendeurCode').value.toUpperCase();
+            const tel = document.getElementById('vendeurTel').value;
+            const commission = parseFloat(document.getElementById('vendeurCommission').value);
+            
+            // Vérifier si le code existe déjà
+            if (vendeurs.find(v => v.code === code)) {
+                alert('Ce code vendeur existe déjà !');
+                return;
+            }
+            
+            vendeurs.push({
+                id: nextVendeurId++,
+                nom: nom,
+                code: code,
+                telephone: tel,
+                commission: commission,
+                isAdmin: false,
+                dateCreation: new Date()
+            });
+            
+            hideAddVendeurModal();
+            updateVendeursGrid();
+            db.saveData();
+        }
+
+        function updateVendeursGrid() {
+            const container = document.getElementById('vendeursGrid');
+            container.innerHTML = '';
+            
+            vendeurs.forEach(vendeur => {
+                const today = new Date().toDateString();
+                const ventesVendeur = ventes.filter(v => v.vendeurId === vendeur.id && v.date.toDateString() === today);
+                const totalJour = ventesVendeur.reduce((sum, vente) => sum + vente.total, 0);
+                const totalGeneral = ventes.filter(v => v.vendeurId === vendeur.id).reduce((sum, vente) => sum + vente.total, 0);
+                const commission = (totalJour * vendeur.commission) / 100;
+                
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 rounded-lg p-4 border';
+                
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h3 class="font-bold text-lg flex items-center">
+                                ${vendeur.nom}
+                                ${vendeur.isAdmin ? '<span class="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">ADMIN</span>' : ''}
+                            </h3>
+                            <p class="text-sm text-gray-600">Code: ${vendeur.code}</p>
+                            ${vendeur.telephone ? `<p class="text-sm text-gray-600">📞 ${vendeur.telephone}</p>` : ''}
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-500">Commission</div>
+                            <div class="font-bold text-green-600">${vendeur.commission}%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="bg-white rounded p-2 text-center">
+                            <div class="text-lg font-bold text-blue-600">${totalJour} CFA</div>
+                            <div class="text-xs text-gray-500">Aujourd'hui</div>
+                        </div>
+                        <div class="bg-white rounded p-2 text-center">
+                            <div class="text-lg font-bold text-green-600">${Math.round(commission)} CFA</div>
+                            <div class="text-xs text-gray-500">Commission</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center text-sm text-gray-600 mb-3">
+                        Total général: ${totalGeneral} CFA
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="modifierVendeur(${vendeur.id})" class="flex-1 bg-blue-500 text-white py-1 px-2 rounded text-sm hover:bg-blue-600 transition-colors">
+                            ✏️ Modifier
+                        </button>
+                        ${!vendeur.isAdmin ? `
+                        <button onclick="supprimerVendeur(${vendeur.id})" class="flex-1 bg-red-500 text-white py-1 px-2 rounded text-sm hover:bg-red-600 transition-colors">
+                            🗑️ Supprimer
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function modifierVendeur(vendeurId) {
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé. Cette action est réservée aux administrateurs.');
+                return;
+            }
+            
+            const vendeur = vendeurs.find(v => v.id === vendeurId);
+            if (!vendeur) return;
+            
+            // Remplir le formulaire avec les données actuelles
+            document.getElementById('modifyVendeurId').value = vendeur.id;
+            document.getElementById('modifyVendeurNom').value = vendeur.nom;
+            document.getElementById('modifyVendeurCode').value = vendeur.code;
+            document.getElementById('modifyVendeurTel').value = vendeur.telephone || '';
+            document.getElementById('modifyVendeurCommission').value = vendeur.commission;
+            
+            // Afficher le modal
+            document.getElementById('modifyVendeurModal').classList.remove('hidden');
+            document.getElementById('modifyVendeurModal').classList.add('flex');
+        }
+
+        function hideModifyVendeurModal() {
+            document.getElementById('modifyVendeurModal').classList.add('hidden');
+            document.getElementById('modifyVendeurModal').classList.remove('flex');
+        }
+
+        function updateVendeur(event) {
+            event.preventDefault();
+            
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé.');
+                return;
+            }
+            
+            const vendeurId = parseInt(document.getElementById('modifyVendeurId').value);
+            const nom = document.getElementById('modifyVendeurNom').value;
+            const code = document.getElementById('modifyVendeurCode').value.toUpperCase();
+            const tel = document.getElementById('modifyVendeurTel').value;
+            const commission = parseFloat(document.getElementById('modifyVendeurCommission').value);
+            
+            // Vérifier si le code existe déjà (sauf pour le vendeur actuel)
+            const existingVendeur = vendeurs.find(v => v.code === code && v.id !== vendeurId);
+            if (existingVendeur) {
+                alert('Ce code vendeur est déjà utilisé par un autre vendeur !');
+                return;
+            }
+            
+            // Mettre à jour le vendeur
+            const vendeur = vendeurs.find(v => v.id === vendeurId);
+            if (vendeur) {
+                const ancienCode = vendeur.code;
+                vendeur.nom = nom;
+                vendeur.code = code;
+                vendeur.telephone = tel;
+                vendeur.commission = commission;
+                
+                // Si c'est le vendeur connecté qui modifie ses propres infos
+                if (vendeurConnecte.id === vendeurId) {
+                    vendeurConnecte = vendeur;
+                    updateUserInterface();
+                    updateVendeurStats();
+                }
+                
+                // Mettre à jour les ventes existantes si le nom a changé
+                ventes.forEach(vente => {
+                    if (vente.vendeurId === vendeurId) {
+                        vente.vendeurNom = nom;
+                    }
+                });
+                
+                hideModifyVendeurModal();
+                updateVendeursGrid();
+                db.saveData();
+                
+                alert(`✅ Informations de ${nom} mises à jour avec succès !`);
+            }
+        }
+
+        function supprimerVendeur(vendeurId) {
+            if (!vendeurConnecte.isAdmin) return;
+            
+            const vendeur = vendeurs.find(v => v.id === vendeurId);
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${vendeur.nom} ?\n\n⚠️ Attention: Les ventes de ce vendeur resteront dans l'historique mais le vendeur ne pourra plus se connecter.`)) {
+                vendeurs = vendeurs.filter(v => v.id !== vendeurId);
+                updateVendeursGrid();
+                db.saveData();
+                alert(`✅ Vendeur ${vendeur.nom} supprimé avec succès.`);
+            }
+        }
+
+        // Gestion de la section Ventes
+        function updateVentesTable() {
+            // Remplir le filtre des vendeurs
+            const filtreVendeur = document.getElementById('filtreVendeur');
+            const currentFilter = filtreVendeur.value;
+            filtreVendeur.innerHTML = '<option value="">Tous les vendeurs</option>';
+            
+            vendeurs.forEach(vendeur => {
+                const option = document.createElement('option');
+                option.value = vendeur.id;
+                option.textContent = `${vendeur.nom} (${vendeur.code})`;
+                if (vendeur.id.toString() === currentFilter) {
+                    option.selected = true;
+                }
+                filtreVendeur.appendChild(option);
+            });
+            
+            // Filtrer les ventes
+            let ventesFiltered = [...ventes];
+            
+            // Filtre par vendeur
+            const vendeurId = document.getElementById('filtreVendeur').value;
+            if (vendeurId) {
+                ventesFiltered = ventesFiltered.filter(vente => vente.vendeurId.toString() === vendeurId);
+            }
+            
+            // Filtre par date
+            const dateFilter = document.getElementById('filtreDate').value;
+            if (dateFilter) {
+                const filterDate = new Date(dateFilter).toDateString();
+                ventesFiltered = ventesFiltered.filter(vente => vente.date.toDateString() === filterDate);
+            }
+            
+            // Trier par date décroissante (plus récent en premier)
+            ventesFiltered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Calculer les statistiques filtrées
+            const totalVentes = ventesFiltered.length;
+            const chiffreAffaires = ventesFiltered.reduce((sum, vente) => sum + vente.total, 0);
+            const produitsVendus = ventesFiltered.reduce((sum, vente) => sum + vente.totalProduits, 0);
+            const panierMoyen = totalVentes > 0 ? chiffreAffaires / totalVentes : 0;
+            
+            // Mettre à jour les statistiques affichées
+            document.getElementById('totalVentesAffichees').textContent = totalVentes;
+            document.getElementById('chiffreAffichees').textContent = chiffreAffaires + ' CFA';
+            document.getElementById('produitsVendusAffichees').textContent = produitsVendus;
+            document.getElementById('panierMoyenAffichees').textContent = Math.round(panierMoyen) + ' CFA';
+            
+            // Remplir le tableau
+            const tbody = document.getElementById('ventesTableBody');
+            const noVentesMessage = document.getElementById('noVentesMessage');
+            
+            if (ventesFiltered.length === 0) {
+                tbody.innerHTML = '';
+                noVentesMessage.classList.remove('hidden');
+            } else {
+                noVentesMessage.classList.add('hidden');
+                tbody.innerHTML = '';
+                
+                ventesFiltered.forEach(vente => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b hover:bg-gray-50';
+                    
+                    // Formater la date
+                    const dateFormatted = vente.date.toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Résumé des produits
+                    const produitsResume = vente.items.length > 2 ? 
+                        `${vente.items.slice(0, 2).map(item => item.nom).join(', ')}...` :
+                        vente.items.map(item => item.nom).join(', ');
+                    
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-mono text-sm">#${vente.id.toString().slice(-6)}</td>
+                        <td class="py-3 px-4 text-sm">${dateFormatted}</td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                    ${vente.vendeurNom.charAt(0)}
+                                </div>
+                                <span class="text-sm font-medium">${vente.vendeurNom}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-sm max-w-xs truncate" title="${vente.items.map(item => `${item.nom} (x${item.quantite})`).join(', ')}">
+                            ${produitsResume}
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-blue-600">${vente.totalProduits}</td>
+                        <td class="py-3 px-4 font-bold text-green-600">${vente.total} CFA</td>
+                        <td class="py-3 px-4 font-bold text-purple-600">${Math.round(vente.commission)} CFA</td>
+                        <td class="py-3 px-4">
+                            <button onclick="showVenteDetails(${vente.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors">
+                                👁️ Voir
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+        
+        function showVenteDetails(venteId) {
+            const vente = ventes.find(v => v.id === venteId);
+            if (!vente) return;
+            
+            const modal = document.getElementById('venteDetailsModal');
+            const content = document.getElementById('venteDetailsContent');
+            
+            const dateFormatted = vente.date.toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- En-tête de la vente -->
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-bold text-blue-800 mb-2">Informations de la vente</h4>
+                                <p><strong>ID:</strong> #${vente.id.toString().slice(-6)}</p>
+                                <p><strong>Date:</strong> ${dateFormatted}</p>
+                                <p><strong>Vendeur:</strong> ${vente.vendeurNom}</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-green-800 mb-2">Montants</h4>
+                                <p><strong>Total:</strong> <span class="text-green-600 font-bold">${vente.total} CFA</span></p>
+                                <p><strong>Commission:</strong> <span class="text-purple-600 font-bold">${Math.round(vente.commission)} CFA</span></p>
+                                <p><strong>Produits vendus:</strong> <span class="text-blue-600 font-bold">${vente.totalProduits}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Détail des produits -->
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-3">Détail des produits vendus</h4>
+                        <div class="space-y-2">
+                            ${vente.items.map(item => `
+                                <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8">${getProductImage(item)}</div>
+                                        <div>
+                                            <div class="font-medium">${item.nom}</div>
+                                            <div class="text-sm text-gray-500">${item.prix} CFA l'unité</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-bold">Qté: ${item.quantite}</div>
+                                        <div class="text-blue-600 font-bold">${item.prix * item.quantite} CFA</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Récapitulatif -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex justify-between items-center text-lg font-bold">
+                            <span>Total de la vente:</span>
+                            <span class="text-green-600">${vente.total} CFA</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Avertissement de sécurité -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-red-600">🔒</span>
+                            <span class="text-sm text-red-800 font-medium">
+                                Cette vente est enregistrée de façon permanente et ne peut pas être supprimée pour des raisons de traçabilité comptable.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function hideVenteDetailsModal() {
+            const modal = document.getElementById('venteDetailsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        
+        function exportVentes() {
+            // Récupérer les ventes filtrées
+            let ventesFiltered = [...ventes];
+            
+            const vendeurId = document.getElementById('filtreVendeur').value;
+            if (vendeurId) {
+                ventesFiltered = ventesFiltered.filter(vente => vente.vendeurId.toString() === vendeurId);
+            }
+            
+            const dateFilter = document.getElementById('filtreDate').value;
+            if (dateFilter) {
+                const filterDate = new Date(dateFilter).toDateString();
+                ventesFiltered = ventesFiltered.filter(vente => vente.date.toDateString() === filterDate);
+            }
+            
+            // Créer le CSV
+            let csvContent = 'ID Vente,Date,Heure,Vendeur,Code Vendeur,Produit,Quantité,Prix Unitaire,Sous-total,Total Vente,Commission\n';
+            
+            ventesFiltered.forEach(vente => {
+                const dateStr = vente.date.toLocaleDateString('fr-FR');
+                const heureStr = vente.date.toLocaleTimeString('fr-FR');
+                const vendeur = vendeurs.find(v => v.id === vente.vendeurId);
+                const codeVendeur = vendeur ? vendeur.code : 'N/A';
+                
+                vente.items.forEach(item => {
+                    const sousTotal = item.prix * item.quantite;
+                    csvContent += `#${vente.id.toString().slice(-6)},"${dateStr}","${heureStr}","${vente.vendeurNom}","${codeVendeur}","${item.nom}",${item.quantite},${item.prix},${sousTotal},${vente.total},${Math.round(vente.commission)}\n`;
+                });
+            });
+            
+            // Télécharger le fichier
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            
+            const dateStr = new Date().toISOString().split('T')[0];
+            const vendeurFilter = vendeurId ? `-${vendeurs.find(v => v.id.toString() === vendeurId)?.code || 'vendeur'}` : '';
+            const dateFilterStr = dateFilter ? `-${dateFilter}` : '';
+            
+            link.setAttribute('download', `ventes${vendeurFilter}${dateFilterStr}-${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Statistiques
+        function updateStatistiques() {
+            const today = new Date().toDateString();
+            const ventesJour = ventes.filter(vente => vente.date.toDateString() === today);
+            
+            const totalRevenue = ventesJour.reduce((sum, vente) => sum + vente.total, 0);
+            const totalVentes = ventesJour.length;
+            const totalProduits = ventesJour.reduce((sum, vente) => sum + vente.totalProduits, 0);
+            const panierMoyen = totalVentes > 0 ? totalRevenue / totalVentes : 0;
+            
+            document.getElementById('statRevenue').textContent = totalRevenue + ' CFA';
+            document.getElementById('statVentes').textContent = totalVentes;
+            document.getElementById('statProduits').textContent = totalProduits;
+            document.getElementById('statMoyenne').textContent = Math.round(panierMoyen) + ' CFA';
+            
+            // Top produits
+            const produitsVendus = {};
+            ventesJour.forEach(vente => {
+                vente.items.forEach(item => {
+                    if (!produitsVendus[item.id]) {
+                        produitsVendus[item.id] = { ...item, quantiteVendue: 0 };
+                    }
+                    produitsVendus[item.id].quantiteVendue += item.quantite;
+                });
+            });
+            
+            const topProduits = Object.values(produitsVendus)
+                .sort((a, b) => b.quantiteVendue - a.quantiteVendue)
+                .slice(0, 5);
+            
+            const container = document.getElementById('topProduits');
+            if (topProduits.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Aucune vente enregistrée</p>';
+            } else {
+                container.innerHTML = '';
+                topProduits.forEach((produit, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between bg-gray-50 rounded-lg p-3';
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <span class="font-bold text-gray-500">#${index + 1}</span>
+                            <div class="w-6 h-6">${getProductImage(produit)}</div>
+                            <span class="font-medium">${produit.nom}</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-blue-600">${produit.quantiteVendue} vendus</div>
+                            <div class="text-sm text-gray-500">${(produit.prix * produit.quantiteVendue)} CFA</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        // Fonctions pour la gestion de la base de données (Admin seulement)
+        function handleImport(input) {
+            if (!vendeurConnecte.isAdmin) {
+                alert('❌ Accès refusé.');
+                return;
+            }
+            
+            const file = input.files[0];
+            if (file) {
+                db.importData(file);
+            }
+        }
+
+        function updateDatabaseInfo() {
+            const totalRevenue = ventes.reduce((sum, vente) => sum + vente.total, 0);
+            const dataSize = new Blob([JSON.stringify({produits, ventes, vendeurs, nextProductId, nextVendeurId})]).size;
+            const lastSaved = localStorage.getItem('GlacierManager') ? 
+                JSON.parse(localStorage.getItem('GlacierManager')).lastSaved : null;
+
+            document.getElementById('dbProduits').textContent = produits.length;
+            document.getElementById('dbVentes').textContent = ventes.length;
+            document.getElementById('dbRevenue').textContent = totalRevenue + ' CFA';
+            document.getElementById('dataSize').textContent = (dataSize / 1024).toFixed(1) + ' KB';
+            document.getElementById('lastSaved').textContent = lastSaved ? 
+                new Date(lastSaved).toLocaleString('fr-FR') : 'Jamais';
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // L'application démarre sur l'écran de connexion
+            console.log('🍦 UNIVERS GLACE - Système de connexion activé');
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9860cd03452b51ff',t:'MTc1OTAzNjkyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
